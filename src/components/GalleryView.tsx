@@ -12,6 +12,7 @@ const AlbumCover = ({ seed }: { seed: string }) => {
     }
     return Math.abs(hash);
   };
+
   const imageId = hashCode(seed) % 1000;
   const imageUrl = `https://picsum.photos/id/${imageId}/300/300`;
 
@@ -45,7 +46,7 @@ export default function GalleryView({
   const observer = useRef<IntersectionObserver>();
 
   const lastSongElementRef = useCallback(
-    (node: HTMLDivElement) => {
+    (node) => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
@@ -58,6 +59,27 @@ export default function GalleryView({
     [loading, hasMore]
   );
 
+  const fetchSongs = useCallback(
+    async (currentPage: number) => {
+      setLoading(true);
+      try {
+        const res = await axios.get("/api/songs", {
+          params: { lang, seed, likes, page: currentPage, perPage: 20 },
+        });
+        const newSongs = res.data.songs;
+        setSongs((prev) =>
+          currentPage === 1 ? newSongs : [...prev, ...newSongs]
+        );
+        setHasMore(currentPage < res.data.totalPages);
+      } catch (e) {
+        console.error("Failed to fetch songs", e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [lang, seed, likes]
+  );
+
   useEffect(() => {
     setSongs([]);
     setPage(1);
@@ -65,64 +87,42 @@ export default function GalleryView({
   }, [lang, seed, likes]);
 
   useEffect(() => {
-    if (!hasMore) return;
-    setLoading(true);
-    axios
-      .get("/api/songs", {
-        params: { lang, seed, likes, page, perPage: 20 },
-      })
-      .then((res) => {
-        setSongs((prevSongs) => {
-          const newSongs = res.data.songs;
-          const existingIds = new Set(prevSongs.map((s) => s.index));
-          return [
-            ...prevSongs,
-            ...newSongs.filter((s: Song) => !existingIds.has(s.index)),
-          ];
-        });
-        setHasMore(res.data.songs.length > 0 && page < res.data.totalPages);
-        setLoading(false);
-      })
-      .catch((e) => {
-        console.error("Failed to fetch songs", e);
-        setLoading(false);
-      });
-  }, [page, lang, seed, likes]);
+    fetchSongs(page);
+  }, [page, fetchSongs]);
 
   return (
     <div className="gallery-container">
       <div className="gallery-grid">
         {songs.map((song, index) => {
-          const cardContent = (
-            <>
-              <AlbumCover seed={song.coverSeed} />
-              <h3>{song.title}</h3>
-              <p>{song.artist}</p>
-            </>
-          );
-
           if (songs.length === index + 1) {
             return (
               <div
                 ref={lastSongElementRef}
-                key={`${seed}-${song.index}`}
+                key={song.index}
                 className="gallery-card"
               >
-                {cardContent}
+                <AlbumCover seed={song.coverSeed} />
+                <h3>{song.title}</h3>
+                <p>{song.artist}</p>
               </div>
             );
           } else {
             return (
-              <div key={`${seed}-${song.index}`} className="gallery-card">
-                {cardContent}
+              <div key={song.index} className="gallery-card">
+                <AlbumCover seed={song.coverSeed} />
+                <h3>{song.title}</h3>
+                <p>{song.artist}</p>
               </div>
             );
           }
         })}
       </div>
-      {loading && <p className="loading-indicator">Loading more songs...</p>}
-      {!hasMore && songs.length > 0 && (
-        <p className="empty-message">🎉 All songs loaded</p>
+
+      {loading && (
+        <div className="loading-indicator">Loading more songs...</div>
+      )}
+      {!hasMore && (
+        <div className="empty-message">You have reached the end!</div>
       )}
     </div>
   );

@@ -28,6 +28,7 @@ body {
   font-size: 26px;
   font-weight: 700;
   text-align: center;
+  margin-bottom: 24px;
 }
 
 .toolbar {
@@ -140,12 +141,11 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.table-card {
+.table-wrapper {
   background: var(--card);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   overflow: hidden;
-  padding: 0;
 }
 
 .table-header {
@@ -168,7 +168,7 @@ body {
 .table-row {
   display: grid;
   grid-template-columns: 3fr 2fr 2fr 2fr 1fr;
-  padding: 16px 24px;
+  padding: 0 24px;
   align-items: center;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
@@ -192,6 +192,7 @@ body {
   color: #374151;
   display: flex;
   align-items: center;
+  height: 100%;
 }
 
 .cell.title {
@@ -233,12 +234,19 @@ body {
   font-size: 14px;
 }
 
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
 .pagination {
   display: flex;
   gap: 12px;
   justify-content: center;
-  padding: 24px;
-  border-top: 1px solid var(--border);
+  align-items: center;
 }
 
 .pagination button {
@@ -263,6 +271,29 @@ body {
 
 .pagination button:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.export-button:hover {
+  background-color: #f8fafc;
+  border-color: #d1d5db;
+}
+
+.export-button:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
@@ -338,7 +369,7 @@ body {
   cursor: pointer;
   border-radius: 8px;
   position: relative;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 .view-switcher button.active {
@@ -347,14 +378,11 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.view-switcher button.active::after {
-  content: none;
-}
-
 .audio-controls {
   margin-left: auto;
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
 .play-button {
@@ -384,12 +412,54 @@ body {
   opacity: 0.7;
 }
 
+.play-error {
+  color: #ef4444;
+  margin-left: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .loading-indicator,
 .error-message,
 .empty-message {
   text-align: center;
   padding: 40px;
   color: var(--muted);
+}
+
+.wave-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  gap: 4px;
+}
+
+.wave-bar {
+  width: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  animation: wave 1.2s infinite ease-in-out;
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    height: 4px;
+  }
+
+  25% {
+    height: 24px;
+  }
+
+  50% {
+    height: 8px;
+  }
+
+  75% {
+    height: 18px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -450,5 +520,10 @@ body {
   .cover-image {
     max-width: 140px;
     margin: 0 auto;
+  }
+
+  .table-footer {
+    flex-direction: column-reverse;
+    gap: 16px;
   }
 }

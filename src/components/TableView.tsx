@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Song } from "../App";
 import SongsTable from "./SongsTable";
+import { Download } from "lucide-react";
 
 export default function TableView({
   lang,
@@ -17,10 +18,11 @@ export default function TableView({
   const [totalPage, setTotalPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setPage(1);
-  }, [lang, seed]);
+  }, [lang, seed, likes]);
 
   const fetchSongs = useCallback(async () => {
     setIsLoading(true);
@@ -46,17 +48,53 @@ export default function TableView({
     fetchSongs();
   }, [fetchSongs]);
 
+  const handleExport = () => {
+    setIsExporting(true);
+    const params = new URLSearchParams({
+      lang,
+      seed,
+      likes: String(likes),
+      page: String(page),
+      perPage: String(20),
+    });
+    window.location.href = `/api/export?${params.toString()}`;
+    setTimeout(() => {
+      setIsExporting(false);
+    }, 3000);
+  };
+
   if (isLoading) return <div className="loading-indicator">Loading...</div>;
   if (error) return <div className="error-message">{error}</div>;
   if (songs.length === 0)
     return <div className="empty-message">No songs found.</div>;
 
   return (
-    <SongsTable
-      songs={songs}
-      page={page}
-      setPage={setPage}
-      totalPage={totalPage}
-    />
+    <div className="table-wrapper">
+      <SongsTable songs={songs} />
+      <div className="table-footer">
+        <button
+          className="export-button"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          <Download size={16} />
+          {isExporting ? "Exporting..." : "Export Page"}
+        </button>
+        <div className="pagination">
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            Prev
+          </button>
+          <span>
+            Page {page} of {totalPage}
+          </span>
+          <button
+            disabled={page >= totalPage}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

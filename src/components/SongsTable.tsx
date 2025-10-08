@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Play, Pause } from "lucide-react"; 
+import { Play, Pause } from "lucide-react";
 import WaveAnimation from "./WaveAnimation";
-import "./WaveAnimation.css";
+import { Song } from "../App";
 
 const AlbumCover = ({ seed, size = 150 }: { seed: string; size?: number }) => {
   const hashCode = (s: string) => {
@@ -33,17 +33,7 @@ const AlbumCover = ({ seed, size = 150 }: { seed: string; size?: number }) => {
   );
 };
 
-export default function SongsTable({
-  songs,
-  page,
-  setPage,
-  totalPage,
-}: {
-  songs: any[];
-  page: number;
-  setPage: (p: number) => void;
-  totalPage: number;
-}) {
+export default function SongsTable({ songs }: { songs: Song[] }) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [playingState, setPlayingState] = useState<{
     seed: string | null;
@@ -107,11 +97,11 @@ export default function SongsTable({
   return (
     <div className="table-card">
       <div className="table-header">
-        <div>Title</div>
-        <div>Artist</div>
-        <div>Album</div>
-        <div>Genre</div>
-        <div>Likes</div>
+        <div data-label="Title">Title</div>
+        <div data-label="Artist">Artist</div>
+        <div data-label="Album">Album</div>
+        <div data-label="Genre">Genre</div>
+        <div data-label="Likes">Likes</div>
       </div>
 
       <div className="table-body">
@@ -121,16 +111,25 @@ export default function SongsTable({
             className="table-row"
             onClick={() => setExpanded(expanded === s.index ? null : s.index)}
           >
-            <div className="cell title">{s.title}</div>
-            <div className="cell">{s.artist}</div>
-            <div className="cell">{s.album}</div>
-            <div className="cell">{s.genre}</div>
-            <div className="cell">{s.likes}</div>
+            <div className="cell title" data-label="Title">
+              {s.title}
+            </div>
+            <div className="cell" data-label="Artist">
+              {s.artist}
+            </div>
+            <div className="cell" data-label="Album">
+              {s.album}
+            </div>
+            <div className="cell" data-label="Genre">
+              {s.genre}
+            </div>
+            <div className="cell" data-label="Likes">
+              {s.likes}
+            </div>
 
             {expanded === s.index && (
               <div className="expanded">
                 <AlbumCover seed={s.coverSeed} />
-
                 <div className="review">
                   <p>
                     <strong>{s.title}</strong> by {s.artist}
@@ -152,7 +151,7 @@ export default function SongsTable({
                   >
                     {playingState.status === "loading" &&
                     playingState.seed === s.coverSeed ? (
-                      "Loading..."
+                      "..."
                     ) : playingState.status === "playing" &&
                       playingState.seed === s.coverSeed ? (
                       <Pause size={22} />
@@ -166,23 +165,13 @@ export default function SongsTable({
 
                   {playingState.status === "error" &&
                     playingState.seed === s.coverSeed && (
-                      <span style={{ color: "red", marginLeft: "10px" }}>
-                        Error
-                      </span>
+                      <span className="play-error">Error</span>
                     )}
                 </div>
               </div>
             )}
           </div>
         ))}
-      </div>
-
-      <div className="pagination">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-          Prev
-        </button>
-        <span>Page {page}</span>
-        <button onClick={() => setPage(page + 1)}>Next</button>
       </div>
     </div>
   );
