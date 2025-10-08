@@ -20,8 +20,6 @@ export default function TableView({
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
-
   useEffect(() => {
     setPage(1);
   }, [lang, seed, likes]);
@@ -30,6 +28,7 @@ export default function TableView({
     setIsLoading(true);
     setError(null);
     try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
       const res = await axios.get(`${apiBaseUrl}/api/songs`, {
         params: { lang, seed, likes, page, perPage: 20 },
       });
@@ -44,7 +43,7 @@ export default function TableView({
     } finally {
       setIsLoading(false);
     }
-  }, [lang, seed, likes, page, apiBaseUrl]);
+  }, [lang, seed, likes, page]);
 
   useEffect(() => {
     fetchSongs();
@@ -52,6 +51,7 @@ export default function TableView({
 
   const handleExport = () => {
     setIsExporting(true);
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const params = new URLSearchParams({
       lang,
       seed,
