@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Toolbar from "./components/Toolbar";
-import SongsTable from "./components/SongsTable";
-import axios from "axios";
+import GalleryView from "./components/GalleryView";
+import TableView from "./components/TableView";
+import "./styles.css";
 
-type Song = {
+type ViewMode = "table" | "gallery";
+
+export type Song = {
   index: number;
   title: string;
   artist: string;
@@ -18,42 +21,7 @@ export default function App() {
   const [lang, setLang] = useState("en");
   const [seed, setSeed] = useState("0");
   const [likes, setLikes] = useState(1);
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(20);
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [totalPage, setTotalPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (page !== 1) {
-      setPage(1);
-    }
-  }, [lang, seed]);
-
-  useEffect(() => {
-    const fetchSongs = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await axios.get("/api/songs", {
-          params: { lang, seed, likes, page, perPage },
-        });
-        setSongs(res.data.songs);
-        setTotalPage(10); // Placeholder
-      } catch (e) {
-        console.error("Error fetching songs:", e);
-        setError(
-          "Failed to load data. Please check if the backend server is running."
-        );
-        setSongs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSongs();
-  }, [lang, seed, likes, page, perPage]);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   return (
     <div className="container">
@@ -66,18 +34,26 @@ export default function App() {
         likes={likes}
         setLikes={setLikes}
       />
-      {isLoading && <div className="loading-indicator">Loading...</div>}
-      {error && <div className="error-message">{error}</div>}
-      {!isLoading && !error && songs.length > 0 && (
-        <SongsTable
-          songs={songs}
-          page={page}
-          setPage={setPage}
-          totalPage={totalPage}
-        />
-      )}
-      {!isLoading && !error && songs.length === 0 && (
-        <div className="empty-message">No songs found.</div>
+
+      <div className="view-switcher">
+        <button
+          onClick={() => setViewMode("table")}
+          className={viewMode === "table" ? "active" : ""}
+        >
+          Table View
+        </button>
+        <button
+          onClick={() => setViewMode("gallery")}
+          className={viewMode === "gallery" ? "active" : ""}
+        >
+          Gallery View
+        </button>
+      </div>
+
+      {viewMode === "table" ? (
+        <TableView lang={lang} seed={seed} likes={likes} />
+      ) : (
+        <GalleryView lang={lang} seed={seed} likes={likes} />
       )}
     </div>
   );
