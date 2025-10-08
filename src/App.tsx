@@ -6,6 +6,7 @@ import GalleryView from "./components/GalleryView";
 import { Download } from "lucide-react";
 
 export type Song = {
+  lyrics: string;
   index: number;
   title: string;
   artist: string;

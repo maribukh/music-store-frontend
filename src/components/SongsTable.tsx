@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause } from "lucide-react";
 import WaveAnimation from "./WaveAnimation";
 import { Song } from "../App";
+import LyricsViewer from "./LyricsViewer";
 
 const AlbumCover = ({ seed, size = 150 }: { seed: string; size?: number }) => {
   const hashCode = (s: string) => {
@@ -39,6 +40,7 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
     seed: string | null;
     status: "playing" | "loading" | "paused" | "error";
   }>({ seed: null, status: "paused" });
+  const [currentTime, setCurrentTime] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -65,11 +67,11 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
 
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current = null;
     }
 
     try {
       setPlayingState({ seed, status: "loading" });
+      setCurrentTime(0);
 
       const safeSeed = seed.replace(/:/g, "-");
       const response = await fetch(`/api/songs/preview/${safeSeed}`);
@@ -84,8 +86,13 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
 
       setPlayingState({ seed, status: "playing" });
 
+      newAudio.ontimeupdate = () => {
+        setCurrentTime(newAudio.currentTime);
+      };
+
       newAudio.onended = () => {
         setPlayingState({ seed: null, status: "paused" });
+        setCurrentTime(0);
         audioRef.current = null;
       };
     } catch (error) {
@@ -95,7 +102,7 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
   };
 
   return (
-    <div className="table-card">
+    <div className="table-card-body">
       <div className="table-header">
         <div data-label="Title">Title</div>
         <div data-label="Artist">Artist</div>
@@ -130,11 +137,19 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
             {expanded === s.index && (
               <div className="expanded">
                 <AlbumCover seed={s.coverSeed} />
-                <div className="review">
-                  <p>
-                    <strong>{s.title}</strong> by {s.artist}
-                  </p>
-                  <p>{s.review}</p>
+                <div className="review-and-lyrics">
+                  <div className="review">
+                    <p>
+                      <strong>{s.title}</strong> by {s.artist}
+                    </p>
+                    <p>{s.review}</p>
+                  </div>
+                  <LyricsViewer
+                    lyrics={s.lyrics}
+                    currentTime={
+                      playingState.seed === s.coverSeed ? currentTime : 0
+                    }
+                  />
                 </div>
 
                 <div className="audio-controls">
