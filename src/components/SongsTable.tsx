@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Play, Pause } from "lucide-react"; 
+import WaveAnimation from "./WaveAnimation";
+import "./WaveAnimation.css";
 
 const AlbumCover = ({ seed, size = 150 }: { seed: string; size?: number }) => {
   const hashCode = (s: string) => {
@@ -58,22 +61,28 @@ export default function SongsTable({
   }, []);
 
   const handlePlay = async (seed: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
     if (playingState.seed === seed && playingState.status === "playing") {
+      audioRef.current?.pause();
       setPlayingState({ seed, status: "paused" });
       return;
+    }
+
+    if (playingState.seed === seed && playingState.status === "paused") {
+      await audioRef.current?.play();
+      setPlayingState({ seed, status: "playing" });
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
 
     try {
       setPlayingState({ seed, status: "loading" });
 
-      // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Заменяем ":" на "-"
       const safeSeed = seed.replace(/:/g, "-");
       const response = await fetch(`/api/songs/preview/${safeSeed}`);
-
       if (!response.ok) throw new Error("Network response was not ok");
 
       const audioBlob = await response.blob();
@@ -104,6 +113,7 @@ export default function SongsTable({
         <div>Genre</div>
         <div>Likes</div>
       </div>
+
       <div className="table-body">
         {songs.map((s) => (
           <div
@@ -116,16 +126,19 @@ export default function SongsTable({
             <div className="cell">{s.album}</div>
             <div className="cell">{s.genre}</div>
             <div className="cell">{s.likes}</div>
+
             {expanded === s.index && (
               <div className="expanded">
                 <AlbumCover seed={s.coverSeed} />
+
                 <div className="review">
                   <p>
                     <strong>{s.title}</strong> by {s.artist}
                   </p>
                   <p>{s.review}</p>
                 </div>
-                <div>
+
+                <div className="audio-controls">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -135,15 +148,22 @@ export default function SongsTable({
                       playingState.status === "loading" &&
                       playingState.seed === s.coverSeed
                     }
+                    className="play-button"
                   >
                     {playingState.status === "loading" &&
-                    playingState.seed === s.coverSeed
-                      ? "Loading..."
-                      : playingState.status === "playing" &&
-                        playingState.seed === s.coverSeed
-                      ? "Pause"
-                      : "Play"}
+                    playingState.seed === s.coverSeed ? (
+                      "Loading..."
+                    ) : playingState.status === "playing" &&
+                      playingState.seed === s.coverSeed ? (
+                      <Pause size={22} />
+                    ) : (
+                      <Play size={22} />
+                    )}
                   </button>
+
+                  {playingState.status === "playing" &&
+                    playingState.seed === s.coverSeed && <WaveAnimation />}
+
                   {playingState.status === "error" &&
                     playingState.seed === s.coverSeed && (
                       <span style={{ color: "red", marginLeft: "10px" }}>
@@ -156,6 +176,7 @@ export default function SongsTable({
           </div>
         ))}
       </div>
+
       <div className="pagination">
         <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
           Prev
