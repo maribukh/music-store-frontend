@@ -20,15 +20,14 @@ export default function TableView({
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  useEffect(() => {
-    setPage(1);
-  }, [lang, seed, likes]);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  useEffect(() => setPage(1), [lang, seed, likes]);
 
   const fetchSongs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
       const res = await axios.get(`${apiBaseUrl}/api/songs`, {
         params: { lang, seed, likes, page, perPage: 20 },
       });
@@ -36,14 +35,12 @@ export default function TableView({
       setTotalPage(res.data.totalPages);
     } catch (e) {
       console.error("Error fetching songs:", e);
-      setError(
-        "Failed to load data. Please check if the backend server is running."
-      );
+      setError("Failed to load data. Check if backend server is running.");
       setSongs([]);
     } finally {
       setIsLoading(false);
     }
-  }, [lang, seed, likes, page]);
+  }, [lang, seed, likes, page, apiBaseUrl]);
 
   useEffect(() => {
     fetchSongs();
@@ -51,36 +48,27 @@ export default function TableView({
 
   const handleExport = () => {
     setIsExporting(true);
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const params = new URLSearchParams({
       lang,
       seed,
       likes: String(likes),
       page: String(page),
-      perPage: String(20),
+      perPage: "20",
     });
     window.location.href = `${apiBaseUrl}/api/export?${params.toString()}`;
-    setTimeout(() => {
-      setIsExporting(false);
-    }, 3000);
+    setTimeout(() => setIsExporting(false), 3000);
   };
 
-  if (isLoading) return <div className="loading-indicator">Loading...</div>;
-  if (error) return <div className="error-message">{error}</div>;
-  if (songs.length === 0)
-    return <div className="empty-message">No songs found.</div>;
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (songs.length === 0) return <div>No songs found.</div>;
 
   return (
     <div className="table-wrapper">
       <SongsTable songs={songs} />
       <div className="table-footer">
-        <button
-          className="export-button"
-          onClick={handleExport}
-          disabled={isExporting}
-        >
-          <Download size={16} />
-          {isExporting ? "Exporting..." : "Export Page"}
+        <button onClick={handleExport} disabled={isExporting}>
+          <Download size={16} /> {isExporting ? "Exporting..." : "Export Page"}
         </button>
         <div className="pagination">
           <button disabled={page <= 1} onClick={() => setPage(page - 1)}>

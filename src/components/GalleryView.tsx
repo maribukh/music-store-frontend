@@ -17,14 +17,7 @@ const AlbumCover = ({ seed }: { seed: string }) => {
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = `https://picsum.photos/seed/${seed}/300/300`;
   };
-  return (
-    <img
-      src={imageUrl}
-      alt="Album Cover"
-      className="gallery-cover"
-      onError={handleError}
-    />
-  );
+  return <img src={imageUrl} alt="Album Cover" onError={handleError} />;
 };
 
 export default function GalleryView({
@@ -42,7 +35,7 @@ export default function GalleryView({
   const [hasMore, setHasMore] = useState(true);
   const observer = useRef<IntersectionObserver>();
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
   const lastSongElementRef = useCallback(
     (node: HTMLDivElement) => {
@@ -50,7 +43,7 @@ export default function GalleryView({
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
+          setPage((prev) => prev + 1);
         }
       });
       if (node) observer.current.observe(node);
@@ -64,9 +57,7 @@ export default function GalleryView({
       const res = await axios.get(`${apiBaseUrl}/api/songs`, {
         params: { lang, seed, likes, page, perPage: 20 },
       });
-      setSongs((prevSongs) => {
-        return [...new Set([...prevSongs, ...res.data.songs])];
-      });
+      setSongs((prev) => [...prev, ...res.data.songs]);
       setHasMore(res.data.songs.length > 0 && page < res.data.totalPages);
     } catch (e) {
       console.error("Failed to fetch songs", e);
@@ -89,33 +80,22 @@ export default function GalleryView({
     <div className="gallery-container">
       <div className="gallery-grid">
         {songs.map((song, index) => {
-          if (songs.length === index + 1) {
-            return (
-              <div
-                ref={lastSongElementRef}
-                key={song.index}
-                className="gallery-card"
-              >
-                <AlbumCover seed={song.coverSeed} />
-                <h3>{song.title}</h3>
-                <p>{song.artist}</p>
-              </div>
-            );
-          } else {
-            return (
-              <div key={song.index} className="gallery-card">
-                <AlbumCover seed={song.coverSeed} />
-                <h3>{song.title}</h3>
-                <p>{song.artist}</p>
-              </div>
-            );
-          }
+          const isLast = index === songs.length - 1;
+          return (
+            <div
+              key={song.index}
+              ref={isLast ? lastSongElementRef : null}
+              className="gallery-card"
+            >
+              <AlbumCover seed={song.coverSeed} />
+              <h3>{song.title}</h3>
+              <p>{song.artist}</p>
+            </div>
+          );
         })}
       </div>
-      {loading && (
-        <div className="loading-indicator">Loading more songs...</div>
-      )}
-      {!hasMore && <div className="empty-message">All songs loaded.</div>}
+      {loading && <div>Loading more songs...</div>}
+      {!hasMore && <div>All songs loaded.</div>}
     </div>
   );
 }

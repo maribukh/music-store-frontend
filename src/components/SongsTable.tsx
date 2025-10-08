@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause } from "lucide-react";
-import WaveAnimation from "./WaveAnimation";
 import { Song } from "../App";
 import LyricsViewer from "./LyricsViewer";
 
@@ -14,21 +13,17 @@ const AlbumCover = ({ seed, size = 150 }: { seed: string; size?: number }) => {
     }
     return Math.abs(hash);
   };
-
   const imageId = hashCode(seed) % 1000;
   const imageUrl = `https://picsum.photos/id/${imageId}/${size}/${size}`;
-
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = `https://picsum.photos/seed/${seed}/${size}/${size}`;
   };
-
   return (
     <img
       src={imageUrl}
       alt="Album Cover"
       width={size}
       height={size}
-      className="cover-image"
       onError={handleError}
     />
   );
@@ -43,13 +38,11 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
   const [currentTime, setCurrentTime] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      audioRef.current?.pause();
     };
   }, []);
 
@@ -65,9 +58,7 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    if (audioRef.current) audioRef.current.pause();
 
     try {
       setPlayingState({ seed, status: "loading" });
@@ -85,24 +76,14 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
       const newAudio = new Audio(audioUrl);
       audioRef.current = newAudio;
 
-      newAudio.onplaying = () => {
-        setPlayingState({ seed, status: "playing" });
-      };
-
-      newAudio.ontimeupdate = () => {
-        setCurrentTime(newAudio.currentTime);
-      };
-
+      newAudio.onplaying = () => setPlayingState({ seed, status: "playing" });
+      newAudio.ontimeupdate = () => setCurrentTime(newAudio.currentTime);
       newAudio.onended = () => {
         setPlayingState({ seed: null, status: "paused" });
         setCurrentTime(0);
         audioRef.current = null;
       };
-
-      newAudio.onerror = () => {
-        console.error("Error playing audio");
-        setPlayingState({ seed, status: "error" });
-      };
+      newAudio.onerror = () => setPlayingState({ seed, status: "error" });
 
       await newAudio.play();
     } catch (error) {
@@ -114,11 +95,11 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
   return (
     <div className="table-card-body">
       <div className="table-header">
-        <div data-label="Title">Title</div>
-        <div data-label="Artist">Artist</div>
-        <div data-label="Album">Album</div>
-        <div data-label="Genre">Genre</div>
-        <div data-label="Likes">Likes</div>
+        <div>Title</div>
+        <div>Artist</div>
+        <div>Album</div>
+        <div>Genre</div>
+        <div>Likes</div>
       </div>
 
       <div className="table-body">
@@ -128,71 +109,35 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
             className="table-row"
             onClick={() => setExpanded(expanded === s.index ? null : s.index)}
           >
-            <div className="cell title" data-label="Title">
-              {s.title}
-            </div>
-            <div className="cell" data-label="Artist">
-              {s.artist}
-            </div>
-            <div className="cell" data-label="Album">
-              {s.album}
-            </div>
-            <div className="cell" data-label="Genre">
-              {s.genre}
-            </div>
-            <div className="cell" data-label="Likes">
-              {s.likes}
-            </div>
+            <div>{s.title}</div>
+            <div>{s.artist}</div>
+            <div>{s.album}</div>
+            <div>{s.genre}</div>
+            <div>{s.likes}</div>
 
             {expanded === s.index && (
               <div className="expanded">
                 <AlbumCover seed={s.coverSeed} />
-                <div className="review-and-lyrics">
-                  <div className="review">
-                    <p>
-                      <strong>{s.title}</strong> by {s.artist}
-                    </p>
-                    <p>{s.review}</p>
-                  </div>
-                  <LyricsViewer
-                    lyrics={s.lyrics}
-                    currentTime={
-                      playingState.seed === s.coverSeed ? currentTime : 0
-                    }
-                  />
-                </div>
-
-                <div className="audio-controls">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlay(s.coverSeed);
-                    }}
-                    disabled={
-                      playingState.status === "loading" &&
-                      playingState.seed === s.coverSeed
-                    }
-                    className="play-button"
-                  >
-                    {playingState.status === "loading" &&
-                    playingState.seed === s.coverSeed ? (
-                      "..."
-                    ) : playingState.status === "playing" &&
-                      playingState.seed === s.coverSeed ? (
-                      <Pause size={22} />
-                    ) : (
-                      <Play size={22} />
-                    )}
-                  </button>
-
+                <LyricsViewer
+                  lyrics={s.lyrics}
+                  currentTime={
+                    playingState.seed === s.coverSeed ? currentTime : 0
+                  }
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlay(s.coverSeed);
+                  }}
+                >
                   {playingState.status === "playing" &&
-                    playingState.seed === s.coverSeed && <WaveAnimation />}
-
-                  {playingState.status === "error" &&
-                    playingState.seed === s.coverSeed && (
-                      <span className="play-error">Error</span>
-                    )}
-                </div>
+                  playingState.seed === s.coverSeed ? (
+                    <Pause />
+                  ) : (
+                    <Play />
+                  )}
+                </button>
+                {playingState.status === "error" && <span>Error</span>}
               </div>
             )}
           </div>
