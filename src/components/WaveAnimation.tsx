@@ -1,5 +1,4 @@
 import React from "react";
-import "./WaveAnimation.css";
 
 export default function WaveAnimation() {
   return (
@@ -8,7 +7,7 @@ export default function WaveAnimation() {
         <div
           key={i}
           className="wave-bar"
-          style={{ animationDelay: `${i * 0.1}s` }}
+          style={{ animationDelay: `${i * 0.15}s` }}
         ></div>
       ))}
     </div>
