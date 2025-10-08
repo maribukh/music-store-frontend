@@ -12,14 +12,11 @@ const AlbumCover = ({ seed }: { seed: string }) => {
     }
     return Math.abs(hash);
   };
-
   const imageId = hashCode(seed) % 1000;
   const imageUrl = `https://picsum.photos/id/${imageId}/300/300`;
-
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = `https://picsum.photos/seed/${seed}/300/300`;
   };
-
   return (
     <img
       src={imageUrl}
@@ -45,8 +42,10 @@ export default function GalleryView({
   const [hasMore, setHasMore] = useState(true);
   const observer = useRef<IntersectionObserver>();
 
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+
   const lastSongElementRef = useCallback(
-    (node) => {
+    (node: HTMLDivElement) => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
@@ -59,26 +58,22 @@ export default function GalleryView({
     [loading, hasMore]
   );
 
-  const fetchSongs = useCallback(
-    async (currentPage: number) => {
-      setLoading(true);
-      try {
-        const res = await axios.get("/api/songs", {
-          params: { lang, seed, likes, page: currentPage, perPage: 20 },
-        });
-        const newSongs = res.data.songs;
-        setSongs((prev) =>
-          currentPage === 1 ? newSongs : [...prev, ...newSongs]
-        );
-        setHasMore(currentPage < res.data.totalPages);
-      } catch (e) {
-        console.error("Failed to fetch songs", e);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [lang, seed, likes]
-  );
+  const fetchSongs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${apiBaseUrl}/api/songs`, {
+        params: { lang, seed, likes, page, perPage: 20 },
+      });
+      setSongs((prevSongs) => {
+        return [...new Set([...prevSongs, ...res.data.songs])];
+      });
+      setHasMore(res.data.songs.length > 0 && page < res.data.totalPages);
+    } catch (e) {
+      console.error("Failed to fetch songs", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, lang, seed, likes, apiBaseUrl]);
 
   useEffect(() => {
     setSongs([]);
@@ -87,8 +82,8 @@ export default function GalleryView({
   }, [lang, seed, likes]);
 
   useEffect(() => {
-    fetchSongs(page);
-  }, [page, fetchSongs]);
+    fetchSongs();
+  }, [fetchSongs]);
 
   return (
     <div className="gallery-container">
@@ -117,13 +112,10 @@ export default function GalleryView({
           }
         })}
       </div>
-
       {loading && (
         <div className="loading-indicator">Loading more songs...</div>
       )}
-      {!hasMore && (
-        <div className="empty-message">You have reached the end!</div>
-      )}
+      {!hasMore && <div className="empty-message">All songs loaded.</div>}
     </div>
   );
 }

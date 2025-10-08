@@ -43,6 +43,7 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
   const [currentTime, setCurrentTime] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
 
   useEffect(() => {
     return () => {
@@ -61,7 +62,6 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
 
     if (playingState.seed === seed && playingState.status === "paused") {
       await audioRef.current?.play();
-      setPlayingState({ seed, status: "playing" });
       return;
     }
 
@@ -74,7 +74,9 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
       setCurrentTime(0);
 
       const safeSeed = seed.replace(/:/g, "-");
-      const response = await fetch(`/api/songs/preview/${safeSeed}`);
+      const response = await fetch(
+        `${apiBaseUrl}/api/songs/preview/${safeSeed}`
+      );
       if (!response.ok) throw new Error("Network response was not ok");
 
       const audioBlob = await response.blob();
@@ -82,9 +84,10 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
 
       const newAudio = new Audio(audioUrl);
       audioRef.current = newAudio;
-      await newAudio.play();
 
-      setPlayingState({ seed, status: "playing" });
+      newAudio.onplaying = () => {
+        setPlayingState({ seed, status: "playing" });
+      };
 
       newAudio.ontimeupdate = () => {
         setCurrentTime(newAudio.currentTime);
@@ -95,6 +98,13 @@ export default function SongsTable({ songs }: { songs: Song[] }) {
         setCurrentTime(0);
         audioRef.current = null;
       };
+
+      newAudio.onerror = () => {
+        console.error("Error playing audio");
+        setPlayingState({ seed, status: "error" });
+      };
+
+      await newAudio.play();
     } catch (error) {
       console.error("Error fetching or playing audio:", error);
       setPlayingState({ seed, status: "error" });
